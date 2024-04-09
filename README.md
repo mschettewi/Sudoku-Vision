@@ -326,3 +326,132 @@ plt.show()
 ![png](readme_images/Sudoku_17_0.png)
     
 
+## Extract digits
+
+The following function will print the image of a sudoku board represented as a list of lists.
+
+```python
+def print_board(board):
+    for i in range(9):
+        if (i == 0):
+            print(
+                "================================"
+            )
+        for j, val in enumerate(board[i]):
+            print_pipe = [1, 2, 4, 5, 7, 8]
+            if (j == 0):
+                print("||", end="")
+            if (j in print_pipe):
+                print("|", end="")
+            if (j % 3 == 0 and j != 0):
+                print("||", end="")
+            if (val == -1):
+                print("  ", end="")
+            else:
+                print(str(val) + " ", end="")
+        if ((i + 1) % 3 == 0):
+            print(
+                "||\n================================"
+            )
+        else:
+            print("||")
+    print("\n")
+```
+
+We are going to use Roboflow's digit recognition model (`digit-recognition-qcxre/1`) to extract the digits from the image. We are going to use a low confidence threshold.
+
+We can display the bounding box for each found digit.
+
+```python      
+custom_configuration = InferenceConfiguration(confidence_threshold=0.0001)
+
+CLIENT = InferenceHTTPClient(
+    api_url="https://detect.roboflow.com",
+    api_key=os.environ["ROBOFLOW_API_KEY"]
+)
+
+labeled_photo = cropped.copy()
+
+with CLIENT.use_configuration(custom_configuration):
+    results = CLIENT.infer(labeled_photo, model_id="digit-recognition-qcxre/1")
+    predictions = results['predictions']
+
+for bounding_box in predictions:
+    x1 = bounding_box['x'] - bounding_box['width'] / 2
+    x2 = bounding_box['x'] + bounding_box['width'] / 2
+    y1 = bounding_box['y'] - bounding_box['height'] / 2
+    y2 = bounding_box['y'] + bounding_box['height'] / 2
+
+    cv2.rectangle(labeled_photo, (int(x1), int(y1)), (int(x2), int(y2)), (36, 255, 12), 2, )
+    cv2.putText(labeled_photo, bounding_box['class'], (int(bounding_box['x']), int(bounding_box['y'])),
+                cv2.FONT_HERSHEY_SIMPLEX, 5, (36, 255, 12), 2)
+
+fig, ax = plt.subplots()
+ax.imshow(labeled_photo)
+
+ax.set_xticks([])
+ax.set_yticks([])
+
+plt.show()
+```
+
+![png](readme_images/labeled.png)
+
+Finally, we are going to create iterate through the sudoku cells and find the prediction that is contained in the cell. From the image above, we notice that you can have multiple predictions for a single cell. We are going to take the prediction with the highest confidence as our predicted digit.
+
+
+```python
+sudoku_board = []
+
+for x in range(9):
+    row = []
+    for y in range(9):
+        best_confidence = 0
+        best_match = ' '
+        for prediction in predictions:
+            if dx * x < prediction['y'] < dx * (x + 1) and dy * y < prediction['x'] < dy * (y + 1):
+                if prediction['confidence'] > best_confidence:
+                    best_match = prediction['class']
+                    best_confidence = prediction['confidence']
+
+        row.append(best_match)
+        axs[x, y].imshow(cropped[dx * x:dx * (x + 1), dy * y: dy * (y + 1)])
+        axs[x, y].set_xticks([])
+        axs[x, y].set_yticks([])
+
+    sudoku_board.append(row)
+```
+
+We can see the original image compared to our extracted sudoku board.
+
+
+```python
+fig, ax = plt.subplots()
+ax.imshow(sudoku_image)
+
+ax.set_xticks([])
+ax.set_yticks([])
+
+plt.show()
+
+print_board(sudoku_board)
+```
+
+![png](readme_images/Sudoku_1_0.png)
+
+
+```text
+================================
+||3 |9 |5 ||6 |7 |2 ||4 |1 |8 ||
+||8 |1 |6 ||3 |9 |4 ||2 |5 |7 ||
+||2 |4 |7 ||1 |8 |5 ||3 |6 |9 ||
+================================
+||9 |5 |3 ||4 |1 |6 ||7 |8 |2 ||
+||6 |8 |4 ||7 |2 |3 ||5 |9 |1 ||
+||1 |7 |2 ||9 |5 |8 ||6 |3 |4 ||
+================================
+||7 |3 |8 ||2 |6 |1 ||9 |4 |5 ||
+||5 |6 |9 ||8 |4 |7 ||1 |2 |3 ||
+||4 |2 |1 ||5 |3 |9 ||8 |7 |6 ||
+================================
+```
