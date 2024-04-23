@@ -34,23 +34,23 @@ plt.show()
 
 To blur the image we are going to perform a convolution between some averaging kernel and the image. We could use the box filter which will take the average of $n x n$ pixels and assign that value to the center pixel. 
 
-For example, 
+For example,
 
-```math
-A_3 = \begin{bmatrix}
+$$A_3 = \begin{bmatrix}
 1 & 1 & 1 \\
 1 & 1 & 1 \\
 1 & 1 & 1 
-\end{bmatrix}
-```
+\end{bmatrix}$$
 
-```math
-kernel = \frac{A}{||A||} = \begin{bmatrix}
+Define the sum of all elements to be the norm defined below. 
+
+$$\text{norm(A)} = \sum_i^n \sum_j^n a_{ij}$$
+
+$$kernel = \frac{A}{norm(A)} = \begin{bmatrix}
 \frac{1}{9} & \frac{1}{9} & \frac{1}{9} \\
 \frac{1}{9} & \frac{1}{9} & \frac{1}{9} \\
 \frac{1}{9} & \frac{1}{9} & \frac{1}{9} 
-\end{bmatrix}
-```
+\end{bmatrix}$$
 
 
 It turns out that the Gaussian Kernel is a much better blur filter as it gives more weight to the nearby neighbors. 
@@ -58,7 +58,7 @@ It turns out that the Gaussian Kernel is a much better blur filter as it gives m
 The 2-D gaussian is represented by 
 $G(u, v) = \frac{1}{2 \pi \sigma^2}e^{-\frac{u^2+v^2}{2\sigma^2}}$. 
 
-Since we don't want to make the image ligher, we need to normalize the gaussian kernel. The kernel is a discrete representation of the continuous function, therefore we can normalize in the same way as above ($\frac{A}{||A||}$).  
+Since we don't want to make the image ligher, we need to normalize the gaussian kernel. The kernel is a discrete representation of the continuous function, therefore we can normalize in the same way as above ($\frac{A}{norm(A)}$).  
 
 Below, I have plotted the 2-D gaussian function. 
 
